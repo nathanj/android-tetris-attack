@@ -32,12 +32,11 @@ import android.widget.TextView;
 
 /**
  * Snake: a simple game that everyone can enjoy.
- * 
+ * <p/>
  * This is an implementation of the classic Game "Snake", in which you control a serpent roaming
  * around the garden looking for apples. Be careful, though, because when you catch one, not only
  * will you become longer, but you'll move faster. Running into yourself or the walls will end the
  * game.
- * 
  */
 @TargetApi(Build.VERSION_CODES.HONEYCOMB)
 public class Snake extends Activity {
@@ -53,11 +52,11 @@ public class Snake extends Activity {
     private static String ICICLE_KEY = "snake-view";
 
     private SnakeView mSnakeView;
+    private BoardView boardView;
 
     /**
      * Called when Activity is first created. Turns off the title bar, sets up the content views,
      * and fires up the SnakeView.
-     * 
      */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -65,136 +64,64 @@ public class Snake extends Activity {
 
         setContentView(R.layout.snake_layout);
 
-        mSnakeView = (SnakeView) findViewById(R.id.snake);
-        mSnakeView.setDependentViews((TextView) findViewById(R.id.text),
-                findViewById(R.id.arrowContainer), findViewById(R.id.background));
+        boardView = (BoardView) findViewById(R.id.board);
+
+//        mSnakeView = (SnakeView) findViewById(R.id.snake);
+//        mSnakeView.setDependentViews((TextView) findViewById(R.id.text),
+//                findViewById(R.id.arrowContainer), findViewById(R.id.background));
 
         if (savedInstanceState == null) {
             // We were just launched -- set up a new game
-            mSnakeView.setMode(SnakeView.READY);
+//            mSnakeView.setMode(SnakeView.READY);
         } else {
             // We are being restored
-            Bundle map = savedInstanceState.getBundle(ICICLE_KEY);
-            if (map != null) {
-                mSnakeView.restoreState(map);
-            } else {
-                mSnakeView.setMode(SnakeView.PAUSE);
-            }
+//            Bundle map = savedInstanceState.getBundle(ICICLE_KEY);
+//            if (map != null) {
+//                mSnakeView.restoreState(map);
+//            } else {
+//                mSnakeView.setMode(SnakeView.PAUSE);
+//            }
         }
-        mSnakeView.setOnTouchListener(new OnTouchListener() {
+        boardView.setOnTouchListener(new OnTouchListener() {
 
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                if (mSnakeView.getGameState() == SnakeView.RUNNING) {
-                    // Normalize x,y between 0 and 1
-                    float x = event.getX() / v.getWidth();
-                    float y = event.getY() / v.getHeight();
-                    
-                    System.out.println("onTouch event = " + event.toString());
+                // Normalize x,y between 0 and 1
+                float x = event.getX() / v.getWidth();
+                float y = event.getY() / v.getHeight();
 
-                    // Direction will be [0,1,2,3] depending on quadrant
-                    int direction = 0;
-                    direction = (x > y) ? 1 : 0;
-                    direction |= (x > 1 - y) ? 2 : 0;
-
-                    // Direction is same as the quadrant which was clicked
-                    mSnakeView.moveSnake(direction);
-                    
-                    switch (event.getAction()) {
+                switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                     case MotionEvent.ACTION_MOVE:
-                    	mSnakeView.moveApple(event.getX(), event.getY());
-                    	break;
-                    }
-
-                } else {
-                    // If the game is not running then on touching any part of the screen
-                    // we start the game by sending MOVE_UP signal to SnakeView
-                    mSnakeView.moveSnake(MOVE_UP);
+                        System.out.println("event = " + event);
+//                    	mSnakeView.moveApple(event.getX(), event.getY());
+                        break;
                 }
+
                 return false;
             }
-            
         });
-        
 
-        mSnakeView.setOnLongClickListener(new OnLongClickListener() {
-			
-			@Override
-			public boolean onLongClick(View v) {
-//				System.out.println("Starting a drag...");
-//
-//				// Create a new ClipData.
-//				// This is done in two steps to provide clarity. The convenience method
-//				// ClipData.newPlainText() can create a plain text ClipData in one step.
-//
-//				// Create a new ClipData.Item from the ImageView object's tag
-//				ClipData.Item item = new ClipData.Item("my tag");
-//
-//				// Create a new ClipData using the tag as a label, the plain text MIME type, and
-//				// the already-created item. This will create a new ClipDescription object within the
-//				// ClipData, and set its MIME type entry to "text/plain"
-//				ClipData dragData = new ClipData("my tag",  new String[] {"text/plain"} ,item);
-//
-//				v.startDrag(dragData, null, null, 0);
-				return true;
-			}
-		});
-        
-        mSnakeView.setOnDragListener(new OnDragListener() {
-			
-			@Override
-			public boolean onDrag(View v, DragEvent event) {
-				System.out.println("action: " + event.getAction());
-				System.out.println("onDrag event: " + event);
-				switch (event.getAction()) {
-				case DragEvent.ACTION_DRAG_STARTED:
-					System.out.println("DRAG_STARTED");
-					break;
-				}
-				return true;
-			}
-		});
 
+        boardView.setOnLongClickListener(new OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                return true;
+            }
+        });
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         // Pause the game along with the activity
-        mSnakeView.setMode(SnakeView.PAUSE);
+        //mSnakeView.setMode(SnakeView.PAUSE);
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
         // Store the game state
-        outState.putBundle(ICICLE_KEY, mSnakeView.saveState());
-    }
-
-    /**
-     * Handles key events in the game. Update the direction our snake is traveling based on the
-     * DPAD.
-     *
-     */
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent msg) {
-
-        switch (keyCode) {
-            case KeyEvent.KEYCODE_DPAD_UP:
-                mSnakeView.moveSnake(MOVE_UP);
-                break;
-            case KeyEvent.KEYCODE_DPAD_RIGHT:
-                mSnakeView.moveSnake(MOVE_RIGHT);
-                break;
-            case KeyEvent.KEYCODE_DPAD_DOWN:
-                mSnakeView.moveSnake(MOVE_DOWN);
-                break;
-            case KeyEvent.KEYCODE_DPAD_LEFT:
-                mSnakeView.moveSnake(MOVE_LEFT);
-                break;
-        }
-
-        return super.onKeyDown(keyCode, msg);
+        //outState.putBundle(ICICLE_KEY, mSnakeView.saveState());
     }
 
 }
