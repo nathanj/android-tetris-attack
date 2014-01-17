@@ -64,6 +64,7 @@ public class TileView extends View {
 
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.TileView);
         mTileSize = a.getDimensionPixelSize(R.styleable.TileView_tileSize, 12);
+        mTileSize = 60;
 
         a.recycle();
     }
@@ -73,9 +74,9 @@ public class TileView extends View {
 
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.TileView);
         mTileSize = a.getDimensionPixelSize(R.styleable.TileView_tileSize, 12);
+        mTileSize = 60;
 
         a.recycle();
-
     }
 
     /**
@@ -144,6 +145,10 @@ public class TileView extends View {
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        mTileSize = (int) Math.floor(w / 8);
+
+        System.out.println("new mTileSize = " + mTileSize);
+
         mXTileCount = (int) Math.floor(w / mTileSize);
         mYTileCount = (int) Math.floor(h / mTileSize);
 
