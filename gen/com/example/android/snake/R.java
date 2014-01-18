@@ -65,24 +65,25 @@ containing a value of this type.
         public static final int text_violet=0x7f040004;
     }
     public static final class drawable {
-        public static final int dpad_down=0x7f020000;
-        public static final int dpad_left=0x7f020001;
-        public static final int dpad_right=0x7f020002;
-        public static final int dpad_up=0x7f020003;
-        public static final int greenstar=0x7f020004;
-        public static final int ic_launcher=0x7f020005;
-        public static final int redstar=0x7f020006;
-        public static final int yellowstar=0x7f020007;
+        public static final int bluestar=0x7f020000;
+        public static final int dpad_down=0x7f020001;
+        public static final int dpad_left=0x7f020002;
+        public static final int dpad_right=0x7f020003;
+        public static final int dpad_up=0x7f020004;
+        public static final int greenstar=0x7f020005;
+        public static final int ic_launcher=0x7f020006;
+        public static final int purplestar=0x7f020007;
+        public static final int redstar=0x7f020008;
+        public static final int yellowstar=0x7f020009;
     }
     public static final class id {
-        public static final int arrowContainer=0x7f060003;
-        public static final int background=0x7f060000;
-        public static final int imageDown=0x7f060007;
-        public static final int imageLeft=0x7f060005;
-        public static final int imageRight=0x7f060006;
-        public static final int imageUp=0x7f060004;
-        public static final int snake=0x7f060001;
-        public static final int text=0x7f060002;
+        public static final int arrowContainer=0x7f060002;
+        public static final int board=0x7f060000;
+        public static final int imageDown=0x7f060006;
+        public static final int imageLeft=0x7f060004;
+        public static final int imageRight=0x7f060005;
+        public static final int imageUp=0x7f060003;
+        public static final int text=0x7f060001;
     }
     public static final class layout {
         public static final int snake_layout=0x7f030000;

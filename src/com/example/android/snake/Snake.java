@@ -86,15 +86,10 @@ public class Snake extends Activity {
 
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                // Normalize x,y between 0 and 1
-                float x = event.getX() / v.getWidth();
-                float y = event.getY() / v.getHeight();
-
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                     case MotionEvent.ACTION_MOVE:
-                        System.out.println("event = " + event);
-//                    	mSnakeView.moveApple(event.getX(), event.getY());
+                        boardView.handleTouchEvent(event.getAction(), event.getX(), event.getY());
                         break;
                 }
 
