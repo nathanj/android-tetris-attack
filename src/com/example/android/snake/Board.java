@@ -34,11 +34,15 @@ public class Board {
 				board[i][j] = new Piece();
 		
 		for (int i = rows - 8; i < rows; i++)
-			for (int j = 0; j < cols; j++)
-				board[i][j].type = PieceType.values()[rng.nextInt(PieceType.values().length-1)+1];
+			generateRandomRow(i);
 
 		nextRow = new Piece[cols];
 		bitmaps = new Bitmap[PieceType.values().length];
+	}
+
+	private void generateRandomRow(int row) {
+		for (int i = 0; i < cols; i++)
+			board[row][i] = new Piece(PieceType.values()[rng.nextInt(PieceType.values().length - 1) + 1]);
 	}
 
 	public void loadBitmaps(Resources r) {
@@ -116,6 +120,8 @@ public class Board {
 			match |= findColMatches(i);
 
 		if (match) {
+			deselectPiece();
+
 			for (int i = 0; i < rows; i++)
 				for (int j = 0; j < cols; j++)
 					if (board[i][j].dying)
@@ -170,11 +176,17 @@ public class Board {
 		return match;
 	}
 
+	private boolean piecesAbove(int row, int col) {
+		for (int j = row - 1; j >= 0; j--)
+			if (board[j][col].type != PieceType.NONE)
+				return true;
+		return false;
+	}
+
 	public void doGravity() {
-		System.out.println("doGravity()");
 		for (int i = 0; i < cols; i++) {
 			for (int j = rows - 1; j >= 0; j--) {
-				if (board[j][i].type == PieceType.NONE) {
+				while (board[j][i].type == PieceType.NONE && piecesAbove(j, i)) {
 					for (int k = j; k > 0; k--) {
 						board[k][i] = board[k - 1][i];
 					}
@@ -185,13 +197,12 @@ public class Board {
 
 	public void newRow() {
 		for (int i = 0; i < cols; i++) {
-			for (int j = 0; j < rows-1; j++) {
-				board[j][i] = board[j+1][i];
+			for (int j = 0; j < rows - 1; j++) {
+				board[j][i] = board[j + 1][i];
 			}
 		}
 
-		for (int i = 0; i < cols; i++)
-			board[rows-1][i] = new Piece(PieceType.values()[rng.nextInt(PieceType.values().length-1)+1]);
+		generateRandomRow(rows - 1);
 
 		//findMatches();
 	}
