@@ -128,7 +128,7 @@ public class Board {
 						board[i][j].type = PieceType.NONE;
 
 			doGravity();
-			//findMatches();
+			findMatches();
 		}
 	}
 
