@@ -66,16 +66,32 @@ public class Board {
 	}
 
 	public void doDraw(Canvas canvas) {
+		int selectedX = -1, selectedY = -1;
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
 				if (board[i][j].type != PieceType.NONE) {
-					// System.out.println("drawing piece = " + board[i][j]);
 					Bitmap b = pieceToBitmap(board[i][j]);
-					// System.out.println("b = " + b);
-					canvas.drawBitmap(b, yOffset + j * tileSize, xOffset + i
+					if (board[i][j].selected) {
+						selectedX = j;
+						selectedY = i;
+					} else {
+						canvas.drawBitmap(b, yOffset + j * tileSize, xOffset + i
 							* tileSize, paint);
+
+					}
 				}
 			}
+		}
+
+		// Draw the selected piece last so it appears above everything.
+		if (selectedX != -1) {
+			Bitmap b = pieceToBitmap(board[selectedY][selectedX]);
+			b = Bitmap.createScaledBitmap(b,
+				(int) (tileSize * 1.5),
+				(int) (tileSize * 1.5), false);
+			canvas.drawBitmap(b, yOffset + selectedX * tileSize - 12, xOffset + selectedY
+				* tileSize - 12, paint);
+
 		}
 	}
 
@@ -88,6 +104,11 @@ public class Board {
 	public void selectPiece(float x, float y) {
 		selectedPiece.x = (int) Math.floor((x - xOffset) / tileSize);
 		selectedPiece.y = (int) Math.floor((y - yOffset) / tileSize);
+
+		if (selectedPiece.x >= 0 && selectedPiece.x < cols &&
+			selectedPiece.y >= 0 && selectedPiece.y < rows) {
+      			board[selectedPiece.y][selectedPiece.x].selected = true;
+		}
 
 		System.out.printf("selected x=%d y=%d\n", selectedPiece.x,
 				selectedPiece.y);
@@ -106,8 +127,8 @@ public class Board {
 			board[selectedPiece.y][selectedPiece.x] = tmp;
 			selectedPiece.x = gx;
 			selectedPiece.y = gy;
-			doGravity();
-			findMatches();
+			//doGravity();
+			//findMatches();
 		}
 	}
 
@@ -120,8 +141,6 @@ public class Board {
 			match |= findColMatches(i);
 
 		if (match) {
-			deselectPiece();
-
 			for (int i = 0; i < rows; i++)
 				for (int j = 0; j < cols; j++)
 					if (board[i][j].dying)
@@ -210,6 +229,9 @@ public class Board {
 	private class Piece {
 		PieceType type;
 		boolean dying = false;
+		boolean selected = false;
+		boolean falling = false;
+		float speed = 0f;
 
 		Piece() {
 			type = PieceType.NONE;
@@ -219,13 +241,20 @@ public class Board {
 			this.type = type;
 		}
 	}
-	
+
 	private class Coordinate {
 		public int x, y;
 	}
 
 	public void deselectPiece() {
+		System.out.printf("deselect x=%d y=%d", selectedPiece.x, selectedPiece.y);
+
+		if (selectedPiece.x != -1)
+			board[selectedPiece.y][selectedPiece.x].selected = false;
 		selectedPiece.x = -1;
 		selectedPiece.y = -1;
+
+		doGravity();
+		findMatches();
 	}
 }

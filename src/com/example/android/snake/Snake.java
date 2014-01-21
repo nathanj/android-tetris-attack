@@ -41,82 +41,83 @@ import android.widget.TextView;
 @TargetApi(Build.VERSION_CODES.HONEYCOMB)
 public class Snake extends Activity {
 
-    /**
-     * Constants for desired direction of moving the snake
-     */
-    public static int MOVE_LEFT = 0;
-    public static int MOVE_UP = 1;
-    public static int MOVE_DOWN = 2;
-    public static int MOVE_RIGHT = 3;
+	/**
+	 * Constants for desired direction of moving the snake
+	 */
+	public static int MOVE_LEFT = 0;
+	public static int MOVE_UP = 1;
+	public static int MOVE_DOWN = 2;
+	public static int MOVE_RIGHT = 3;
 
-    private static String ICICLE_KEY = "snake-view";
+	private static String ICICLE_KEY = "snake-view";
 
-    private SnakeView mSnakeView;
-    private BoardView boardView;
+	private SnakeView mSnakeView;
+	private BoardView boardView;
 
-    /**
-     * Called when Activity is first created. Turns off the title bar, sets up the content views,
-     * and fires up the SnakeView.
-     */
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+	/**
+	 * Called when Activity is first created. Turns off the title bar, sets up the content views,
+	 * and fires up the SnakeView.
+	 */
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.snake_layout);
+		setContentView(R.layout.snake_layout);
 
-        boardView = (BoardView) findViewById(R.id.board);
+		boardView = (BoardView) findViewById(R.id.board);
 
 //        mSnakeView = (SnakeView) findViewById(R.id.snake);
 //        mSnakeView.setDependentViews((TextView) findViewById(R.id.text),
 //                findViewById(R.id.arrowContainer), findViewById(R.id.background));
 
-        if (savedInstanceState == null) {
-            // We were just launched -- set up a new game
+		if (savedInstanceState == null) {
+			// We were just launched -- set up a new game
 //            mSnakeView.setMode(SnakeView.READY);
-        } else {
-            // We are being restored
+		} else {
+			// We are being restored
 //            Bundle map = savedInstanceState.getBundle(ICICLE_KEY);
 //            if (map != null) {
 //                mSnakeView.restoreState(map);
 //            } else {
 //                mSnakeView.setMode(SnakeView.PAUSE);
 //            }
-        }
-        boardView.setOnTouchListener(new OnTouchListener() {
+		}
+		boardView.setOnTouchListener(new OnTouchListener() {
 
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                    case MotionEvent.ACTION_MOVE:
-                        boardView.handleTouchEvent(event.getAction(), event.getX(), event.getY());
-                        break;
-                }
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				switch (event.getAction()) {
+					case MotionEvent.ACTION_DOWN:
+					case MotionEvent.ACTION_MOVE:
+					case MotionEvent.ACTION_UP:
+						boardView.handleTouchEvent(event.getAction(), event.getX(), event.getY());
+						break;
+				}
 
-                return false;
-            }
-        });
+				return false;
+			}
+		});
 
 
-        boardView.setOnLongClickListener(new OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View v) {
-                return true;
-            }
-        });
-    }
+		boardView.setOnLongClickListener(new OnLongClickListener() {
+			@Override
+			public boolean onLongClick(View v) {
+				return true;
+			}
+		});
+	}
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        // Pause the game along with the activity
-        //mSnakeView.setMode(SnakeView.PAUSE);
-    }
+	@Override
+	protected void onPause() {
+		super.onPause();
+		// Pause the game along with the activity
+		//mSnakeView.setMode(SnakeView.PAUSE);
+	}
 
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        // Store the game state
-        //outState.putBundle(ICICLE_KEY, mSnakeView.saveState());
-    }
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		// Store the game state
+		//outState.putBundle(ICICLE_KEY, mSnakeView.saveState());
+	}
 
 }
