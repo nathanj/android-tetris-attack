@@ -11,7 +11,7 @@ import android.graphics.drawable.Drawable;
 public class Board {
 	private Piece[][] board;
 	private Piece[] nextRow;
-	private int rows, cols;
+	private int rows = 12, cols = 6;
 
 	private enum PieceType {
 		NONE, GREEN, RED, BLUE, YELLOW, PURPLE
@@ -23,16 +23,15 @@ public class Board {
 	private int xOffset = 20, yOffset = 20;
 	private Coordinate selectedPiece = new Coordinate();
 	private Random rng = new Random();
+	private float accel = 10f; // pixels / sec / sec
 
 	public Board() {
-		rows = 12;
-		cols = 6;
 		board = new Piece[rows][cols];
 
 		for (int i = 0; i < rows; i++)
 			for (int j = 0; j < cols; j++)
 				board[i][j] = new Piece();
-		
+
 		for (int i = rows - 8; i < rows; i++)
 			generateRandomRow(i);
 
@@ -75,9 +74,8 @@ public class Board {
 						selectedX = j;
 						selectedY = i;
 					} else {
-						canvas.drawBitmap(b, yOffset + j * tileSize, xOffset + i
-							* tileSize, paint);
-
+						canvas.drawBitmap(b, xOffset + j * tileSize, yOffset + i
+							* tileSize + (int) board[i][j].extra_y, paint);
 					}
 				}
 			}
@@ -91,7 +89,6 @@ public class Board {
 				(int) (tileSize * 1.5), false);
 			canvas.drawBitmap(b, yOffset + selectedX * tileSize - 12, xOffset + selectedY
 				* tileSize - 12, paint);
-
 		}
 	}
 
@@ -108,6 +105,9 @@ public class Board {
 		if (selectedPiece.x >= 0 && selectedPiece.x < cols &&
 			selectedPiece.y >= 0 && selectedPiece.y < rows) {
       			board[selectedPiece.y][selectedPiece.x].selected = true;
+		} else {
+			selectedPiece.y = -1;
+			selectedPiece.x = -1;
 		}
 
 		System.out.printf("selected x=%d y=%d\n", selectedPiece.x,
@@ -117,9 +117,9 @@ public class Board {
 	public void movePiece(float x, float y) {
 		int gx = (int) Math.floor((x - xOffset) / tileSize);
 		int gy = (int) Math.floor((y - yOffset) / tileSize);
-		if (gy < 0 || gy >= 12 || selectedPiece.y < 0 || selectedPiece.y >= 12)
+		if (gy < 0 || gy >= rows || selectedPiece.y < 0 || selectedPiece.y >= rows)
 			return;
-		if (gx < 0 || gx >= 6 || selectedPiece.x < 0 || selectedPiece.x >= 6)
+		if (gx < 0 || gx >= cols || selectedPiece.x < 0 || selectedPiece.x >= cols)
 			return;
 		if (gx != selectedPiece.x && gy == selectedPiece.y) {
 			Piece tmp = board[gy][gx];
@@ -205,9 +205,11 @@ public class Board {
 	public void doGravity() {
 		for (int i = 0; i < cols; i++) {
 			for (int j = rows - 1; j >= 0; j--) {
-				while (board[j][i].type == PieceType.NONE && piecesAbove(j, i)) {
-					for (int k = j; k > 0; k--) {
-						board[k][i] = board[k - 1][i];
+				if (board[j][i].type == PieceType.NONE) {
+					for (int k = j - 1; k >= 0; k--) {
+						if (i == 0 && board[k][i].type != PieceType.NONE && !board[k][i].falling)
+							System.out.printf("got a falling piece: i=%d j=%d k=%d type=%s\n", i, j, k, board[k][i].type.toString());
+						board[k][i].makeFalling();
 					}
 				}
 			}
@@ -223,7 +225,7 @@ public class Board {
 
 		generateRandomRow(rows - 1);
 
-		//findMatches();
+		findMatches();
 	}
 
 	private class Piece {
@@ -232,6 +234,8 @@ public class Board {
 		boolean selected = false;
 		boolean falling = false;
 		float speed = 0f;
+		float x, y;
+		float extra_y = 0f;
 
 		Piece() {
 			type = PieceType.NONE;
@@ -240,6 +244,18 @@ public class Board {
 		Piece(PieceType type) {
 			this.type = type;
 		}
+
+		public void makeFalling() {
+			if (type == PieceType.NONE)
+				return;
+
+			// If already falling nothing to do
+			if (falling)
+				return;
+
+			falling = true;
+			speed = 0f;
+		}
 	}
 
 	private class Coordinate {
@@ -247,7 +263,7 @@ public class Board {
 	}
 
 	public void deselectPiece() {
-		System.out.printf("deselect x=%d y=%d", selectedPiece.x, selectedPiece.y);
+		System.out.printf("deselect x=%d y=%d\n", selectedPiece.x, selectedPiece.y);
 
 		if (selectedPiece.x != -1)
 			board[selectedPiece.y][selectedPiece.x].selected = false;
@@ -256,5 +272,43 @@ public class Board {
 
 		doGravity();
 		findMatches();
+	}
+
+	/**
+	 * Do an update for a tick.
+	 *
+	 * @param millis milliseconds since last update
+	 */
+	public void update(long millis) {
+		float dt = millis / 1000f;
+		boolean pieceStablized = false;
+		for (int i = rows - 1; i >= 0; i--) {
+			for (int j = 0; j < cols; j++) {
+				Piece p = board[i][j];
+				if (p.falling) {
+					p.speed += accel * dt;
+					p.extra_y += p.speed;
+
+					int real_pos = i + (int) Math.ceil(p.extra_y / tileSize);
+
+					if (real_pos >= rows || (board[real_pos][j].type != PieceType.NONE && !board[real_pos][j].falling)) {
+						p.falling = false;
+						p.speed = 0f;
+						p.extra_y = 0f;
+						board[real_pos-1][j] = p;
+						board[i][j] = new Piece();
+						pieceStablized = true;
+					}
+					else if (real_pos > i + 1) {
+						board[real_pos-1][j] = p;
+						board[i][j] = new Piece();
+						p.extra_y -= tileSize;
+					}
+				}
+			}
+		}
+
+		if (pieceStablized)
+			findMatches();
 	}
 }

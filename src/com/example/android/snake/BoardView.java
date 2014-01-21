@@ -30,6 +30,7 @@ public class BoardView extends View {
 	private int ticks = 0;
 	private long lastSec;
 	private int secs = 0;
+	private long lastTick = 0;
 
 	public BoardView(Context context, AttributeSet attrs) {
 		super(context, attrs);
@@ -68,10 +69,14 @@ public class BoardView extends View {
 			ticks = 0;
 			lastSec = curr;
 			secs++;
-			if (secs % 3 == 0)
+			if (secs % 5 == 0)
 				board.newRow();
 		}
 		ticks++;
+		if (lastTick == 0)
+			lastTick = curr;
+		board.update(curr - lastTick);
+		lastTick = curr;
 		redrawHandler.sleep(50);
 	}
 }
