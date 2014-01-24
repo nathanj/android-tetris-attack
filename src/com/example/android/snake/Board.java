@@ -24,6 +24,7 @@ public class Board {
 	private Coordinate selectedPiece = new Coordinate();
 	private Random rng = new Random();
 	private float accel = 10f; // pixels / sec / sec
+	private float dying_time = 1000f; // ms
 
 	public Board() {
 		board = new Piece[rows][cols];
@@ -74,6 +75,10 @@ public class Board {
 						selectedX = j;
 						selectedY = i;
 					} else {
+						paint.setAlpha(255);
+						if (board[i][j].dying) {
+							paint.setAlpha((int) (255 - 255 * board[i][j].dying_time / dying_time));
+						}
 						canvas.drawBitmap(b, xOffset + j * tileSize, yOffset + i
 							* tileSize + (int) board[i][j].extra_y, paint);
 					}
@@ -89,7 +94,7 @@ public class Board {
 				(int) (tileSize * 1.5), false);
 			canvas.drawBitmap(b, yOffset + selectedX * tileSize - 12, xOffset + selectedY
 				* tileSize - 12, paint);
-		}
+ 		}
 	}
 
 	private Bitmap pieceToBitmap(Piece piece) {
@@ -144,10 +149,10 @@ public class Board {
 			for (int i = 0; i < rows; i++)
 				for (int j = 0; j < cols; j++)
 					if (board[i][j].dying)
-						board[i][j].type = PieceType.NONE;
+						board[i][j].makeDying();
 
 			doGravity();
-			findMatches();
+			//findMatches();
 		}
 	}
 
@@ -157,7 +162,8 @@ public class Board {
 		boolean match = false;
 
 		for (int j = 0; j < cols; j++) {
-			if (lastPiece != PieceType.NONE && board[y][j].type == lastPiece) {
+			if (lastPiece != PieceType.NONE && board[y][j].type == lastPiece
+				&& !board[y][j].dying) {
 				num++;
 				if (num >= 3) {
 					match = true;
@@ -179,7 +185,8 @@ public class Board {
 		boolean match = false;
 
 		for (int i = 0; i < rows; i++) {
-			if (lastPiece != PieceType.NONE && board[i][x].type == lastPiece) {
+			if (lastPiece != PieceType.NONE && board[i][x].type == lastPiece
+				&& !board[i][x].dying) {
 				num++;
 				if (num >= 3) {
 					match = true;
@@ -236,6 +243,7 @@ public class Board {
 		float speed = 0f;
 		float x, y;
 		float extra_y = 0f;
+		float dying_time = 0f;
 
 		Piece() {
 			type = PieceType.NONE;
@@ -255,6 +263,17 @@ public class Board {
 
 			falling = true;
 			speed = 0f;
+		}
+
+		public void makeDying() {
+			if (type == PieceType.NONE)
+				return;
+
+			if (dying)
+				return;
+
+			dying = true;
+			dying_time = 0f;
 		}
 	}
 
@@ -282,6 +301,8 @@ public class Board {
 	public void update(long millis) {
 		float dt = millis / 1000f;
 		boolean pieceStablized = false;
+		boolean pieceDisappeared = false;
+
 		for (int i = rows - 1; i >= 0; i--) {
 			for (int j = 0; j < cols; j++) {
 				Piece p = board[i][j];
@@ -305,10 +326,20 @@ public class Board {
 						p.extra_y -= tileSize;
 					}
 				}
+				if (p.dying) {
+					p.dying_time += millis;
+					if (p.dying_time > dying_time) {
+						pieceDisappeared = true;
+						board[i][j].type = PieceType.NONE;
+					}
+				}
 			}
 		}
 
 		if (pieceStablized)
 			findMatches();
+
+		if (pieceDisappeared)
+			doGravity();
 	}
 }
