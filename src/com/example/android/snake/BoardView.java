@@ -69,8 +69,8 @@ public class BoardView extends View {
 			ticks = 0;
 			lastSec = curr;
 			secs++;
-			if (secs % 5 == 0)
-				board.newRow();
+			// if (secs % 5 == 0)
+			// board.newRow();
 		}
 		ticks++;
 		if (lastTick == 0)
