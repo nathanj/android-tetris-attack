@@ -23,9 +23,9 @@ public class Board {
 	private int xOffset = 20, yOffset = 20;
 	private Coordinate selectedPiece = new Coordinate();
 	private Random rng = new Random();
-	private float accel = 10f; // pixels / sec / sec
-	private float dying_time = 1000f; // ms
-	private long nextRowTime = 2000, timeTillNextRow = nextRowTime;
+	private float accel = 25f; // pixels / sec / sec
+	private float dying_time = 500f; // ms
+	private long nextRowTime = 7500, timeTillNextRow = nextRowTime;
 
 	public Board() {
 		board = new Piece[rows][cols];
@@ -76,7 +76,7 @@ public class Board {
 	public void doDraw(Canvas canvas) {
 		int selectedX = -1, selectedY = -1;
 
-		int partialRow = (int) (tileSize * (nextRowTime - timeTillNextRow) / nextRowTime);
+		int partialRow = getPartialRow();
 
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
@@ -115,7 +115,7 @@ public class Board {
 			Bitmap b = pieceToBitmap(board[selectedY][selectedX]);
 			b = Bitmap.createScaledBitmap(b, (int) (tileSize * 1.5), (int) (tileSize * 1.5), false);
 			canvas.drawBitmap(b, yOffset + selectedX * tileSize - 12, xOffset + selectedY
-					* tileSize - 12, paint);
+					* tileSize - 12 - partialRow, paint);
 
 		}
 	}
@@ -126,9 +126,13 @@ public class Board {
 		return bitmaps[piece.type.ordinal()];
 	}
 
+	private int getPartialRow() {
+		return (int) (tileSize * (nextRowTime - timeTillNextRow) / nextRowTime);
+	}
+
 	public void selectPiece(float x, float y) {
 		selectedPiece.x = (int) Math.floor((x - xOffset) / tileSize);
-		selectedPiece.y = (int) Math.floor((y - yOffset) / tileSize);
+		selectedPiece.y = (int) Math.floor((y - yOffset + getPartialRow()) / tileSize);
 
 		if (selectedPiece.x >= 0 && selectedPiece.x < cols && selectedPiece.y >= 0
 				&& selectedPiece.y < rows) {
@@ -143,17 +147,17 @@ public class Board {
 
 	public void movePiece(float x, float y) {
 		int gx = (int) Math.floor((x - xOffset) / tileSize);
-		int gy = (int) Math.floor((y - yOffset) / tileSize);
-		if (gy < 0 || gy >= rows || selectedPiece.y < 0 || selectedPiece.y >= rows)
-			return;
+		// int gy = (int) Math.floor((y - yOffset) / tileSize);
+		// if (gy < 0 || gy >= rows || selectedPiece.y < 0 || selectedPiece.y >=
+		// rows)
+		// return;
 		if (gx < 0 || gx >= cols || selectedPiece.x < 0 || selectedPiece.x >= cols)
 			return;
-		if (gx != selectedPiece.x && gy == selectedPiece.y) {
-			Piece tmp = board[gy][gx];
-			board[gy][gx] = board[selectedPiece.y][selectedPiece.x];
+		if (gx != selectedPiece.x) {
+			Piece tmp = board[selectedPiece.y][gx];
+			board[selectedPiece.y][gx] = board[selectedPiece.y][selectedPiece.x];
 			board[selectedPiece.y][selectedPiece.x] = tmp;
 			selectedPiece.x = gx;
-			selectedPiece.y = gy;
 			// doGravity();
 			// findMatches();
 		}
