@@ -9,9 +9,15 @@ import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 
 public class Board {
+	private final static int rows = 12, cols = 6;
+	private final static int tileSize = 48;
+	private final static int xOffset = 20, yOffset = 20;
+	private final static float acceleration = 25f; // pixels / sec / sec
+	private final static float dying_time = 500f; // ms
+	private final static long nextRowTime = 7500;
+
 	private Piece[][] board;
 	private Piece[] nextRow;
-	private int rows = 12, cols = 6;
 
 	private enum PieceType {
 		NONE, GREEN, RED, BLUE, YELLOW, PURPLE
@@ -19,13 +25,9 @@ public class Board {
 
 	private Bitmap[] bitmaps;
 	private Paint paint = new Paint();
-	private int tileSize = 48;
-	private int xOffset = 20, yOffset = 20;
 	private Coordinate selectedPiece = new Coordinate();
 	private Random rng = new Random();
-	private float accel = 25f; // pixels / sec / sec
-	private float dying_time = 500f; // ms
-	private long nextRowTime = 7500, timeTillNextRow = nextRowTime;
+	private long timeTillNextRow = nextRowTime;
 
 	public Board() {
 		board = new Piece[rows][cols];
@@ -343,7 +345,7 @@ public class Board {
 				if (p.falling) {
 					movingRow = false;
 					System.out.printf("falling i=%d, j=%d\n", i, j);
-					p.speed += accel * dt;
+					p.speed += acceleration * dt;
 					p.extra_y += p.speed;
 
 					int real_pos = i + (int) Math.ceil(p.extra_y / tileSize);
