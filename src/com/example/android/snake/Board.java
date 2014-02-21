@@ -9,69 +9,68 @@ import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 
 public class Board {
-	private final static int rows = 12, cols = 6;
-	private final static int tileSize = 48;
-	private final static int xOffset = 20, yOffset = 20;
-	private final static float acceleration = 25f; // pixels / sec / sec
-	private final static float dying_time = 500f; // ms
-	private final static long nextRowTime = 7500;
+	private final static int ROWS = 11, COLUMNS = 6;
+	private final static int TILE_SIZE = 64;
+	private final static int X_OFFSET = 20, Y_OFFSET = 20;
+	private final static float ACCELERATION = 25f; // pixels / sec / sec
+	private final static float DYING_TIME = 500f; // ms
+	private final static long NEXT_ROW_TIME = 7500;
+	private final static int SELECTED_PIECE_OFFSET_X = 17;
+	private final static int SELECTED_PIECE_OFFSET_Y = 17;
 
 	private Piece[][] board;
 	private Piece[] nextRow;
-
-	private enum PieceType {
-		NONE, GREEN, RED, BLUE, YELLOW, PURPLE
-	}
 
 	private Bitmap[] bitmaps;
 	private Paint paint = new Paint();
 	private Coordinate selectedPiece = new Coordinate();
 	private Random rng = new Random();
-	private long timeTillNextRow = nextRowTime;
+	private long timeTillNextRow = NEXT_ROW_TIME;
+	private BoardMatcher matcher;
 
 	public Board() {
-		board = new Piece[rows][cols];
+		board = new Piece[ROWS][COLUMNS];
 
-		for (int i = 0; i < rows; i++)
-			for (int j = 0; j < cols; j++)
+		for (int i = 0; i < ROWS; i++)
+			for (int j = 0; j < COLUMNS; j++)
 				board[i][j] = new Piece();
 
-		for (int i = rows - 8; i < rows; i++)
+		for (int i = ROWS - 8; i < ROWS; i++)
 			generateRandomRow(i);
 
-		nextRow = new Piece[cols];
+		nextRow = new Piece[COLUMNS];
 		generateNextRow();
-		bitmaps = new Bitmap[PieceType.values().length];
+		bitmaps = new Bitmap[Piece.PieceType.values().length];
+
+		matcher = new BoardMatcher(board, ROWS, COLUMNS);
 	}
 
 	private void generateRandomRow(int row) {
-		for (int i = 0; i < cols; i++)
+		for (int i = 0; i < COLUMNS; i++)
 			board[row][i] = new Piece(
-					PieceType.values()[rng.nextInt(PieceType.values().length - 1) + 1]);
+					Piece.PieceType.values()[rng.nextInt(Piece.PieceType.values().length - 1) + 1]);
 	}
 
 	private void generateNextRow() {
-		for (int i = 0; i < cols; i++)
+		for (int i = 0; i < COLUMNS; i++)
 			nextRow[i] = new Piece(
-					PieceType.values()[rng.nextInt(PieceType.values().length - 1) + 1]);
+					Piece.PieceType.values()[rng.nextInt(Piece.PieceType.values().length - 1) + 1]);
 	}
 
 	public void loadBitmaps(Resources r) {
-		loadTile(PieceType.GREEN, r.getDrawable(R.drawable.greenstar));
-		loadTile(PieceType.RED, r.getDrawable(R.drawable.redstar));
-		loadTile(PieceType.BLUE, r.getDrawable(R.drawable.bluestar));
-		loadTile(PieceType.YELLOW, r.getDrawable(R.drawable.yellowstar));
-		loadTile(PieceType.PURPLE, r.getDrawable(R.drawable.purplestar));
+		loadTile(Piece.PieceType.GREEN, r.getDrawable(R.drawable.greenstar));
+		loadTile(Piece.PieceType.RED, r.getDrawable(R.drawable.redstar));
+		loadTile(Piece.PieceType.BLUE, r.getDrawable(R.drawable.bluestar));
+		loadTile(Piece.PieceType.YELLOW, r.getDrawable(R.drawable.yellowstar));
+		loadTile(Piece.PieceType.PURPLE, r.getDrawable(R.drawable.purplestar));
 	}
 
-	public void loadTile(PieceType piece, Drawable tile) {
-		Bitmap bitmap = Bitmap.createBitmap(tileSize, tileSize, Bitmap.Config.ARGB_8888);
+	public void loadTile(Piece.PieceType piece, Drawable tile) {
+		Bitmap bitmap = Bitmap.createBitmap(TILE_SIZE, TILE_SIZE, Bitmap.Config.ARGB_8888);
 		Canvas canvas = new Canvas(bitmap);
-		tile.setBounds(0, 0, tileSize, tileSize);
+		tile.setBounds(0, 0, TILE_SIZE, TILE_SIZE);
 		tile.draw(canvas);
 
-		// System.out.println("setting piece = " + piece + " to bitmap = " +
-		// bitmap);
 		bitmaps[piece.ordinal()] = bitmap;
 	}
 
@@ -80,9 +79,9 @@ public class Board {
 
 		int partialRow = getPartialRow();
 
-		for (int i = 0; i < rows; i++) {
-			for (int j = 0; j < cols; j++) {
-				if (board[i][j].type != PieceType.NONE) {
+		for (int i = 0; i < ROWS; i++) {
+			for (int j = 0; j < COLUMNS; j++) {
+				if (board[i][j].type != Piece.PieceType.NONE) {
 					Bitmap b = pieceToBitmap(board[i][j]);
 					if (board[i][j].selected) {
 						selectedX = j;
@@ -90,22 +89,22 @@ public class Board {
 					} else {
 						paint.setAlpha(255);
 						if (board[i][j].dying) {
-							paint.setAlpha((int) (255 - 255 * board[i][j].dying_time / dying_time));
+							paint.setAlpha((int) (255 - 255 * board[i][j].dying_time / DYING_TIME));
 						}
-						canvas.drawBitmap(b, xOffset + j * tileSize, yOffset + i * tileSize
+						canvas.drawBitmap(b, X_OFFSET + j * TILE_SIZE, Y_OFFSET + i * TILE_SIZE
 								+ (int) board[i][j].extra_y - partialRow, paint);
 					}
 				}
 			}
 		}
 
-		for (int j = 0; j < cols; j++) {
+		for (int j = 0; j < COLUMNS; j++) {
 			Bitmap b = pieceToBitmap(nextRow[j]);
 			paint.setAlpha(150);
-			// canvas.drawBitmap(b, xOffset + j * tileSize, yOffset + rows
-			// * tileSize - partialRow, paint);
-			int x = xOffset + j * tileSize;
-			int y = yOffset + rows * tileSize - partialRow;
+			// canvas.drawBitmap(b, X_OFFSET + j * TILE_SIZE, Y_OFFSET + ROWS
+			// * TILE_SIZE - partialRow, paint);
+			int x = X_OFFSET + j * TILE_SIZE;
+			int y = Y_OFFSET + ROWS * TILE_SIZE - partialRow;
 			b = Bitmap.createBitmap(b, 0, 0, b.getWidth(), Math.max(partialRow, 1));
 			canvas.drawBitmap(b, x, y, paint);
 		}
@@ -115,29 +114,31 @@ public class Board {
 		// Draw the selected piece last so it appears above everything.
 		if (selectedX != -1) {
 			Bitmap b = pieceToBitmap(board[selectedY][selectedX]);
-			b = Bitmap.createScaledBitmap(b, (int) (tileSize * 1.5), (int) (tileSize * 1.5), false);
-			canvas.drawBitmap(b, yOffset + selectedX * tileSize - 12, xOffset + selectedY
-					* tileSize - 12 - partialRow, paint);
+			b = Bitmap.createScaledBitmap(b, (int) (TILE_SIZE * 1.5), (int) (TILE_SIZE * 1.5), false);
+			canvas.drawBitmap(b, Y_OFFSET + selectedX * TILE_SIZE - SELECTED_PIECE_OFFSET_X, X_OFFSET + selectedY
+					* TILE_SIZE - SELECTED_PIECE_OFFSET_Y - partialRow, paint);
 
 		}
 	}
 
 	private Bitmap pieceToBitmap(Piece piece) {
-		// System.out.println("piece = " + piece + " ordinal = " +
-		// piece.ordinal());
 		return bitmaps[piece.type.ordinal()];
 	}
 
+	/**
+	 * Returns the number of pixels that the new row should be
+	 * displayed.
+	 */
 	private int getPartialRow() {
-		return (int) (tileSize * (nextRowTime - timeTillNextRow) / nextRowTime);
+		return (int) (TILE_SIZE * (NEXT_ROW_TIME - timeTillNextRow) / NEXT_ROW_TIME);
 	}
 
 	public void selectPiece(float x, float y) {
-		selectedPiece.x = (int) Math.floor((x - xOffset) / tileSize);
-		selectedPiece.y = (int) Math.floor((y - yOffset + getPartialRow()) / tileSize);
+		selectedPiece.x = (int) Math.floor((x - X_OFFSET) / TILE_SIZE);
+		selectedPiece.y = (int) Math.floor((y - Y_OFFSET + getPartialRow()) / TILE_SIZE);
 
-		if (selectedPiece.x >= 0 && selectedPiece.x < cols && selectedPiece.y >= 0
-				&& selectedPiece.y < rows) {
+		if (selectedPiece.x >= 0 && selectedPiece.x < COLUMNS && selectedPiece.y >= 0
+				&& selectedPiece.y < ROWS) {
 			board[selectedPiece.y][selectedPiece.x].selected = true;
 		} else {
 			selectedPiece.y = -1;
@@ -148,101 +149,22 @@ public class Board {
 	}
 
 	public void movePiece(float x, float y) {
-		int gx = (int) Math.floor((x - xOffset) / tileSize);
-		// int gy = (int) Math.floor((y - yOffset) / tileSize);
-		// if (gy < 0 || gy >= rows || selectedPiece.y < 0 || selectedPiece.y >=
-		// rows)
-		// return;
-		if (gx < 0 || gx >= cols || selectedPiece.x < 0 || selectedPiece.x >= cols)
+		int gx = (int) Math.floor((x - X_OFFSET) / TILE_SIZE);
+		if (gx < 0 || gx >= COLUMNS || selectedPiece.x < 0 || selectedPiece.x >= COLUMNS)
 			return;
 		if (gx != selectedPiece.x) {
 			Piece tmp = board[selectedPiece.y][gx];
 			board[selectedPiece.y][gx] = board[selectedPiece.y][selectedPiece.x];
 			board[selectedPiece.y][selectedPiece.x] = tmp;
 			selectedPiece.x = gx;
-			// doGravity();
-			// findMatches();
 		}
-	}
-
-	public void findMatches() {
-		boolean match = false;
-
-		for (int i = 0; i < rows; i++)
-			match |= findRowMatches(i);
-		for (int i = 0; i < cols; i++)
-			match |= findColMatches(i);
-
-		if (match) {
-			for (int i = 0; i < rows; i++)
-				for (int j = 0; j < cols; j++)
-					if (board[i][j].dying)
-						board[i][j].makeDying();
-
-			doGravity();
-			// findMatches();
-		}
-	}
-
-	private boolean findRowMatches(int y) {
-		PieceType lastPiece = PieceType.NONE;
-		int num = 0;
-		boolean match = false;
-
-		for (int j = 0; j < cols; j++) {
-			if (lastPiece != PieceType.NONE && board[y][j].type == lastPiece && !board[y][j].dying) {
-				num++;
-				if (num >= 3) {
-					match = true;
-					for (int k = 0; k < num; k++)
-						board[y][j - k].dying = true;
-				}
-			} else {
-				lastPiece = board[y][j].type;
-				num = 1;
-			}
-		}
-
-		return match;
-	}
-
-	private boolean findColMatches(int x) {
-		PieceType lastPiece = PieceType.NONE;
-		int num = 0;
-		boolean match = false;
-
-		for (int i = 0; i < rows; i++) {
-			if (lastPiece != PieceType.NONE && board[i][x].type == lastPiece && !board[i][x].dying) {
-				num++;
-				if (num >= 3) {
-					match = true;
-					for (int k = 0; k < num; k++)
-						board[i - k][x].dying = true;
-				}
-			} else {
-				lastPiece = board[i][x].type;
-				num = 1;
-			}
-		}
-
-		return match;
-	}
-
-	private boolean piecesAbove(int row, int col) {
-		for (int j = row - 1; j >= 0; j--)
-			if (board[j][col].type != PieceType.NONE)
-				return true;
-		return false;
 	}
 
 	public void doGravity() {
-		for (int i = 0; i < cols; i++) {
-			for (int j = rows - 1; j >= 0; j--) {
-				if (board[j][i].type == PieceType.NONE) {
+		for (int i = 0; i < COLUMNS; i++) {
+			for (int j = ROWS - 1; j >= 0; j--) {
+				if (board[j][i].type == Piece.PieceType.NONE) {
 					for (int k = j - 1; k >= 0; k--) {
-						if (i == 0 && board[k][i].type != PieceType.NONE && !board[k][i].falling)
-							System.out.printf("got a falling piece: i=%d j=%d k=%d type=%s\n", i,
-									j, k, board[k][i].type.toString());
 						board[k][i].makeFalling();
 					}
 				}
@@ -257,58 +179,17 @@ public class Board {
 	 * on the board.
 	 */
 	private void makeNextRowReal() {
-		// TODO Auto-generated method stub
-		for (int i = 0; i < cols; i++) {
-			for (int j = 0; j < rows - 1; j++) {
+		for (int i = 0; i < COLUMNS; i++) {
+			for (int j = 0; j < ROWS - 1; j++) {
 				board[j][i] = board[j + 1][i];
 			}
 		}
 
-		for (int i = 0; i < cols; i++) {
-			board[rows - 1][i] = nextRow[i];
-		}
-	}
+		for (int i = 0; i < COLUMNS; i++)
+			board[ROWS - 1][i] = nextRow[i];
 
-	private class Piece {
-		PieceType type;
-		boolean dying = false;
-		boolean selected = false;
-		boolean falling = false;
-		float speed = 0f;
-		float x, y;
-		float extra_y = 0f;
-		float dying_time = 0f;
-
-		Piece() {
-			type = PieceType.NONE;
-		}
-
-		Piece(PieceType type) {
-			this.type = type;
-		}
-
-		public void makeFalling() {
-			if (type == PieceType.NONE)
-				return;
-
-			// If already falling nothing to do
-			if (falling)
-				return;
-
-			falling = true;
-			speed = 0f;
-		}
-
-		public void makeDying() {
-			if (type == PieceType.NONE)
-				return;
-
-			if (dying)
-				return;
-
-			dying = true;
-			dying_time = 0f;
-		}
+		if (selectedPiece.y > 0)
+			selectedPiece.y--;
 	}
 
 	private class Coordinate {
@@ -324,7 +205,7 @@ public class Board {
 		selectedPiece.y = -1;
 
 		doGravity();
-		findMatches();
+		matcher.findMatches();
 	}
 
 	/**
@@ -338,20 +219,21 @@ public class Board {
 		boolean pieceStablized = false;
 		boolean pieceDisappeared = false;
 		boolean movingRow = true;
+		boolean foundMatch = false;
 
-		for (int i = rows - 1; i >= 0; i--) {
-			for (int j = 0; j < cols; j++) {
+		for (int i = ROWS - 1; i >= 0; i--) {
+			for (int j = 0; j < COLUMNS; j++) {
 				Piece p = board[i][j];
 				if (p.falling) {
 					movingRow = false;
 					System.out.printf("falling i=%d, j=%d\n", i, j);
-					p.speed += acceleration * dt;
+					p.speed += ACCELERATION * dt;
 					p.extra_y += p.speed;
 
-					int real_pos = i + (int) Math.ceil(p.extra_y / tileSize);
+					int real_pos = i + (int) Math.ceil(p.extra_y / TILE_SIZE);
 
-					if (real_pos >= rows
-							|| (board[real_pos][j].type != PieceType.NONE && !board[real_pos][j].falling)) {
+					if (real_pos >= ROWS
+							|| (board[real_pos][j].type != Piece.PieceType.NONE && !board[real_pos][j].falling)) {
 						p.falling = false;
 						p.speed = 0f;
 						p.extra_y = 0f;
@@ -361,16 +243,16 @@ public class Board {
 					} else if (real_pos > i + 1) {
 						board[real_pos - 1][j] = p;
 						board[i][j] = new Piece();
-						p.extra_y -= tileSize;
+						p.extra_y -= TILE_SIZE;
 					}
 				}
 				if (p.dying) {
 					movingRow = false;
 					System.out.printf("dying i=%d, j=%d\n", i, j);
 					p.dying_time += millis;
-					if (p.dying_time > dying_time) {
+					if (p.dying_time > DYING_TIME) {
 						pieceDisappeared = true;
-						board[i][j].type = PieceType.NONE;
+						board[i][j].type = Piece.PieceType.NONE;
 						p.dying = false;
 					}
 				}
@@ -384,14 +266,14 @@ public class Board {
 				makeNextRowReal();
 				generateNextRow();
 				pieceStablized = true;
-				timeTillNextRow = nextRowTime;
+				timeTillNextRow = NEXT_ROW_TIME;
 			}
 		}
 
 		if (pieceStablized)
-			findMatches();
+			foundMatch = matcher.findMatches();
 
-		if (pieceDisappeared)
+		if (pieceDisappeared || foundMatch)
 			doGravity();
 	}
 }
