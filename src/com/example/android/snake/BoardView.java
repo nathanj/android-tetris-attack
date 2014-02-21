@@ -64,8 +64,8 @@ public class BoardView extends View {
 		// System.out.println("updating");
 		long curr = System.currentTimeMillis();
 		if (curr > lastSec + 1000) {
-			//System.out.println("ticks = " + ticks + " in " + (curr - lastSec)
-			//		+ " ms");
+			// System.out.println("ticks = " + ticks + " in " + (curr - lastSec)
+			// + " ms");
 			ticks = 0;
 			lastSec = curr;
 			secs++;

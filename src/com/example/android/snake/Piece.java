@@ -1,6 +1,8 @@
 package com.example.android.snake;
 
 public class Piece {
+	public final static int TILE_SIZE = 64;
+
 	public enum PieceType {
 		NONE, GREEN, RED, BLUE, YELLOW, PURPLE
 	}
@@ -20,6 +22,11 @@ public class Piece {
 
 	Piece(PieceType type) {
 		this.type = type;
+	}
+
+	Piece(float x, float y) {
+		this.x = x;
+		this.y = y;
 	}
 
 	public void makeFalling() {

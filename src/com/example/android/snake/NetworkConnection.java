@@ -9,10 +9,10 @@ public class NetworkConnection implements Runnable {
 	@Override
 	public void run() {
 
-		String hostname = "157.184.138.189";
+		String hostname = "192.168.2.2";
 		int portNumber = 9090;
 		System.out.println("doing the socket now");
-		try  {
+		try {
 			Socket echoSocket = new Socket(hostname, portNumber);
 			PrintWriter out = new PrintWriter(echoSocket.getOutputStream(), true);
 			out.println("Hello there");

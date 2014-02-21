@@ -1,6 +1,7 @@
 package com.example.android.snake;
 
 import java.util.Random;
+import java.util.Vector;
 
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -10,7 +11,6 @@ import android.graphics.drawable.Drawable;
 
 public class Board {
 	private final static int ROWS = 11, COLUMNS = 6;
-	private final static int TILE_SIZE = 64;
 	private final static int X_OFFSET = 20, Y_OFFSET = 20;
 	private final static float ACCELERATION = 25f; // pixels / sec / sec
 	private final static float DYING_TIME = 500f; // ms
@@ -27,6 +27,8 @@ public class Board {
 	private Random rng = new Random();
 	private long timeTillNextRow = NEXT_ROW_TIME;
 	private BoardMatcher matcher;
+	private int currentComboNumber = 0;
+	private Vector<TextParticle> comboParticles = new Vector<TextParticle>();
 
 	public Board() {
 		board = new Piece[ROWS][COLUMNS];
@@ -44,8 +46,8 @@ public class Board {
 
 		matcher = new BoardMatcher(board, ROWS, COLUMNS);
 
-		Thread t = new Thread(new NetworkConnection());
-		t.start();
+		// Thread t = new Thread(new NetworkConnection());
+		// t.start();
 	}
 
 	private void generateRandomRow(int row) {
@@ -69,9 +71,9 @@ public class Board {
 	}
 
 	public void loadTile(Piece.PieceType piece, Drawable tile) {
-		Bitmap bitmap = Bitmap.createBitmap(TILE_SIZE, TILE_SIZE, Bitmap.Config.ARGB_8888);
+		Bitmap bitmap = Bitmap.createBitmap(Piece.TILE_SIZE, Piece.TILE_SIZE, Bitmap.Config.ARGB_8888);
 		Canvas canvas = new Canvas(bitmap);
-		tile.setBounds(0, 0, TILE_SIZE, TILE_SIZE);
+		tile.setBounds(0, 0, Piece.TILE_SIZE, Piece.TILE_SIZE);
 		tile.draw(canvas);
 
 		bitmaps[piece.ordinal()] = bitmap;
@@ -94,7 +96,7 @@ public class Board {
 						if (board[i][j].dying) {
 							paint.setAlpha((int) (255 - 255 * board[i][j].dying_time / DYING_TIME));
 						}
-						canvas.drawBitmap(b, X_OFFSET + j * TILE_SIZE, Y_OFFSET + i * TILE_SIZE
+						canvas.drawBitmap(b, X_OFFSET + j * Piece.TILE_SIZE, Y_OFFSET + i * Piece.TILE_SIZE
 								+ (int) board[i][j].extra_y - partialRow, paint);
 					}
 				}
@@ -104,10 +106,10 @@ public class Board {
 		for (int j = 0; j < COLUMNS; j++) {
 			Bitmap b = pieceToBitmap(nextRow[j]);
 			paint.setAlpha(150);
-			// canvas.drawBitmap(b, X_OFFSET + j * TILE_SIZE, Y_OFFSET + ROWS
-			// * TILE_SIZE - partialRow, paint);
-			int x = X_OFFSET + j * TILE_SIZE;
-			int y = Y_OFFSET + ROWS * TILE_SIZE - partialRow;
+			// canvas.drawBitmap(b, X_OFFSET + j * Piece.TILE_SIZE, Y_OFFSET + ROWS
+			// * Piece.TILE_SIZE - partialRow, paint);
+			int x = X_OFFSET + j * Piece.TILE_SIZE;
+			int y = Y_OFFSET + ROWS * Piece.TILE_SIZE - partialRow;
 			b = Bitmap.createBitmap(b, 0, 0, b.getWidth(), Math.max(partialRow, 1));
 			canvas.drawBitmap(b, x, y, paint);
 		}
@@ -117,11 +119,14 @@ public class Board {
 		// Draw the selected piece last so it appears above everything.
 		if (selectedX != -1) {
 			Bitmap b = pieceToBitmap(board[selectedY][selectedX]);
-			b = Bitmap.createScaledBitmap(b, (int) (TILE_SIZE * 1.5), (int) (TILE_SIZE * 1.5), false);
-			canvas.drawBitmap(b, Y_OFFSET + selectedX * TILE_SIZE - SELECTED_PIECE_OFFSET_X, X_OFFSET + selectedY
-					* TILE_SIZE - SELECTED_PIECE_OFFSET_Y - partialRow, paint);
-
+			b = Bitmap.createScaledBitmap(b, (int) (Piece.TILE_SIZE * 1.5), (int) (Piece.TILE_SIZE * 1.5),
+					false);
+			canvas.drawBitmap(b, Y_OFFSET + selectedX * Piece.TILE_SIZE - SELECTED_PIECE_OFFSET_X,
+					X_OFFSET + selectedY * Piece.TILE_SIZE - SELECTED_PIECE_OFFSET_Y - partialRow, paint);
 		}
+
+		for (TextParticle tp : comboParticles)
+			tp.doDraw(canvas);
 	}
 
 	private Bitmap pieceToBitmap(Piece piece) {
@@ -129,16 +134,15 @@ public class Board {
 	}
 
 	/**
-	 * Returns the number of pixels that the new row should be
-	 * displayed.
+	 * Returns the number of pixels that the new row should be displayed.
 	 */
 	private int getPartialRow() {
-		return (int) (TILE_SIZE * (NEXT_ROW_TIME - timeTillNextRow) / NEXT_ROW_TIME);
+		return (int) (Piece.TILE_SIZE * (NEXT_ROW_TIME - timeTillNextRow) / NEXT_ROW_TIME);
 	}
 
 	public void selectPiece(float x, float y) {
-		selectedPiece.x = (int) Math.floor((x - X_OFFSET) / TILE_SIZE);
-		selectedPiece.y = (int) Math.floor((y - Y_OFFSET + getPartialRow()) / TILE_SIZE);
+		selectedPiece.x = (int) Math.floor((x - X_OFFSET) / Piece.TILE_SIZE);
+		selectedPiece.y = (int) Math.floor((y - Y_OFFSET + getPartialRow()) / Piece.TILE_SIZE);
 
 		if (selectedPiece.x >= 0 && selectedPiece.x < COLUMNS && selectedPiece.y >= 0
 				&& selectedPiece.y < ROWS) {
@@ -152,7 +156,7 @@ public class Board {
 	}
 
 	public void movePiece(float x, float y) {
-		int gx = (int) Math.floor((x - X_OFFSET) / TILE_SIZE);
+		int gx = (int) Math.floor((x - X_OFFSET) / Piece.TILE_SIZE);
 		if (gx < 0 || gx >= COLUMNS || selectedPiece.x < 0 || selectedPiece.x >= COLUMNS)
 			return;
 		if (gx != selectedPiece.x) {
@@ -208,7 +212,13 @@ public class Board {
 		selectedPiece.y = -1;
 
 		doGravity();
-		matcher.findMatches();
+		Vector<Piece> matches = matcher.findMatches();
+		if (matches.size() > 0) {
+			for (Piece p : matches) {
+				currentComboNumber++;
+				comboParticles.add(new TextParticle("+" + currentComboNumber, p.x, p.y));
+			}
+		}
 	}
 
 	/**
@@ -229,11 +239,11 @@ public class Board {
 				Piece p = board[i][j];
 				if (p.falling) {
 					movingRow = false;
-					//System.out.printf("falling i=%d, j=%d\n", i, j);
+					// System.out.printf("falling i=%d, j=%d\n", i, j);
 					p.speed += ACCELERATION * dt;
 					p.extra_y += p.speed;
 
-					int real_pos = i + (int) Math.ceil(p.extra_y / TILE_SIZE);
+					int real_pos = i + (int) Math.ceil(p.extra_y / Piece.TILE_SIZE);
 
 					if (real_pos >= ROWS
 							|| (board[real_pos][j].type != Piece.PieceType.NONE && !board[real_pos][j].falling)) {
@@ -246,12 +256,12 @@ public class Board {
 					} else if (real_pos > i + 1) {
 						board[real_pos - 1][j] = p;
 						board[i][j] = new Piece();
-						p.extra_y -= TILE_SIZE;
+						p.extra_y -= Piece.TILE_SIZE;
 					}
 				}
 				if (p.dying) {
 					movingRow = false;
-					//System.out.printf("dying i=%d, j=%d\n", i, j);
+					// System.out.printf("dying i=%d, j=%d\n", i, j);
 					p.dying_time += millis;
 					if (p.dying_time > DYING_TIME) {
 						pieceDisappeared = true;
@@ -274,7 +284,7 @@ public class Board {
 		}
 
 		if (pieceStablized)
-			foundMatch = matcher.findMatches();
+			foundMatch = matcher.findMatches().size() > 0;
 
 		if (pieceDisappeared || foundMatch)
 			doGravity();
