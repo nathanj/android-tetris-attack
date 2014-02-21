@@ -43,6 +43,9 @@ public class Board {
 		bitmaps = new Bitmap[Piece.PieceType.values().length];
 
 		matcher = new BoardMatcher(board, ROWS, COLUMNS);
+
+		Thread t = new Thread(new NetworkConnection());
+		t.start();
 	}
 
 	private void generateRandomRow(int row) {
@@ -226,7 +229,7 @@ public class Board {
 				Piece p = board[i][j];
 				if (p.falling) {
 					movingRow = false;
-					System.out.printf("falling i=%d, j=%d\n", i, j);
+					//System.out.printf("falling i=%d, j=%d\n", i, j);
 					p.speed += ACCELERATION * dt;
 					p.extra_y += p.speed;
 
@@ -248,7 +251,7 @@ public class Board {
 				}
 				if (p.dying) {
 					movingRow = false;
-					System.out.printf("dying i=%d, j=%d\n", i, j);
+					//System.out.printf("dying i=%d, j=%d\n", i, j);
 					p.dying_time += millis;
 					if (p.dying_time > DYING_TIME) {
 						pieceDisappeared = true;
