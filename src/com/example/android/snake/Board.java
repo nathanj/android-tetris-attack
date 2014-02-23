@@ -1,5 +1,6 @@
 package com.example.android.snake;
 
+import java.util.Iterator;
 import java.util.Random;
 import java.util.Vector;
 
@@ -71,7 +72,8 @@ public class Board {
 	}
 
 	public void loadTile(Piece.PieceType piece, Drawable tile) {
-		Bitmap bitmap = Bitmap.createBitmap(Piece.TILE_SIZE, Piece.TILE_SIZE, Bitmap.Config.ARGB_8888);
+		Bitmap bitmap = Bitmap.createBitmap(Piece.TILE_SIZE, Piece.TILE_SIZE,
+				Bitmap.Config.ARGB_8888);
 		Canvas canvas = new Canvas(bitmap);
 		tile.setBounds(0, 0, Piece.TILE_SIZE, Piece.TILE_SIZE);
 		tile.draw(canvas);
@@ -96,8 +98,8 @@ public class Board {
 						if (board[i][j].dying) {
 							paint.setAlpha((int) (255 - 255 * board[i][j].dying_time / DYING_TIME));
 						}
-						canvas.drawBitmap(b, X_OFFSET + j * Piece.TILE_SIZE, Y_OFFSET + i * Piece.TILE_SIZE
-								+ (int) board[i][j].extra_y - partialRow, paint);
+						canvas.drawBitmap(b, X_OFFSET + j * Piece.TILE_SIZE, Y_OFFSET + i
+								* Piece.TILE_SIZE + (int) board[i][j].extra_y - partialRow, paint);
 					}
 				}
 			}
@@ -106,7 +108,8 @@ public class Board {
 		for (int j = 0; j < COLUMNS; j++) {
 			Bitmap b = pieceToBitmap(nextRow[j]);
 			paint.setAlpha(150);
-			// canvas.drawBitmap(b, X_OFFSET + j * Piece.TILE_SIZE, Y_OFFSET + ROWS
+			// canvas.drawBitmap(b, X_OFFSET + j * Piece.TILE_SIZE, Y_OFFSET +
+			// ROWS
 			// * Piece.TILE_SIZE - partialRow, paint);
 			int x = X_OFFSET + j * Piece.TILE_SIZE;
 			int y = Y_OFFSET + ROWS * Piece.TILE_SIZE - partialRow;
@@ -119,10 +122,11 @@ public class Board {
 		// Draw the selected piece last so it appears above everything.
 		if (selectedX != -1) {
 			Bitmap b = pieceToBitmap(board[selectedY][selectedX]);
-			b = Bitmap.createScaledBitmap(b, (int) (Piece.TILE_SIZE * 1.5), (int) (Piece.TILE_SIZE * 1.5),
-					false);
+			b = Bitmap.createScaledBitmap(b, (int) (Piece.TILE_SIZE * 1.5),
+					(int) (Piece.TILE_SIZE * 1.5), false);
 			canvas.drawBitmap(b, Y_OFFSET + selectedX * Piece.TILE_SIZE - SELECTED_PIECE_OFFSET_X,
-					X_OFFSET + selectedY * Piece.TILE_SIZE - SELECTED_PIECE_OFFSET_Y - partialRow, paint);
+					X_OFFSET + selectedY * Piece.TILE_SIZE - SELECTED_PIECE_OFFSET_Y - partialRow,
+					paint);
 		}
 
 		for (TextParticle tp : comboParticles)
@@ -288,5 +292,17 @@ public class Board {
 
 		if (pieceDisappeared || foundMatch)
 			doGravity();
+
+		updateParticles(millis);
+	}
+
+	private void updateParticles(long millis) {
+		Iterator<TextParticle> iter = comboParticles.iterator();
+		while (iter.hasNext()) {
+			TextParticle tp = iter.next();
+			tp.update(millis);
+			if (!tp.isActive())
+				iter.remove();
+		}
 	}
 }
