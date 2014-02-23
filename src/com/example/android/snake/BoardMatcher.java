@@ -12,10 +12,10 @@ public class BoardMatcher {
 		this.cols = cols;
 	}
 
-	public Vector<Piece> findMatches() {
+	public Vector<Match> findMatches() {
 		boolean match = false;
 
-		Vector<Piece> matches = new Vector<Piece>();
+		Vector<Match> matches = new Vector<Match>();
 
 		for (int i = 0; i < rows; i++)
 			matches.addAll(findRowMatches(i));
@@ -32,46 +32,64 @@ public class BoardMatcher {
 		return matches;
 	}
 
-	private Vector<Piece> findRowMatches(int y) {
+	private Vector<Match> findRowMatches(int y) {
 		Piece.PieceType lastPiece = Piece.PieceType.NONE;
 		int num = 0;
-		Vector<Piece> matches = new Vector<Piece>();
+		Vector<Match> matches = new Vector<Match>();
+		Match currentMatch = null;
 
 		for (int j = 0; j < cols; j++) {
 			if (lastPiece != Piece.PieceType.NONE && board[y][j].type == lastPiece
 					&& !board[y][j].dying) {
 				num++;
 				if (num >= 3) {
-					matches.add(new Piece(y, j));
-					for (int k = 0; k < num; k++)
-						board[y][j - k].dying = true;
+					if (currentMatch == null) {
+						currentMatch = new Match();
+						matches.add(currentMatch);
+						for (int k = 1; k < num; k++) {
+							currentMatch.addPiece(new Piece(y, j - k));
+							board[y][j - k].dying = true;
+						}
+					}
+					currentMatch.addPiece(new Piece(y, j));
+					board[y][j].dying = true;
 				}
 			} else {
 				lastPiece = board[y][j].type;
 				num = 1;
+				currentMatch = null;
 			}
 		}
 
 		return matches;
 	}
 
-	private Vector<Piece> findColMatches(int x) {
+	private Vector<Match> findColMatches(int x) {
 		Piece.PieceType lastPiece = Piece.PieceType.NONE;
 		int num = 0;
-		Vector<Piece> matches = new Vector<Piece>();
+		Vector<Match> matches = new Vector<Match>();
+		Match currentMatch = null;
 
 		for (int i = 0; i < rows; i++) {
 			if (lastPiece != Piece.PieceType.NONE && board[i][x].type == lastPiece
 					&& !board[i][x].dying) {
 				num++;
 				if (num >= 3) {
-					matches.add(new Piece(i, x));
-					for (int k = 0; k < num; k++)
-						board[i - k][x].dying = true;
+					if (currentMatch == null) {
+						currentMatch = new Match();
+						matches.add(currentMatch);
+						for (int k = 1; k < num; k++) {
+							currentMatch.addPiece(new Piece(i - k, x));
+							board[i - k][x].dying = true;
+						}
+					}
+					currentMatch.addPiece(new Piece(i, x));
+					board[i][x].dying = true;
 				}
 			} else {
 				lastPiece = board[i][x].type;
 				num = 1;
+				currentMatch = null;
 			}
 		}
 

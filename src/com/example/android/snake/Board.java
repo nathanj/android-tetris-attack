@@ -216,12 +216,15 @@ public class Board {
 		selectedPiece.y = -1;
 
 		doGravity();
-		Vector<Piece> matches = matcher.findMatches();
-		if (matches.size() > 0) {
-			for (Piece p : matches) {
-				currentComboNumber++;
-				comboParticles.add(new TextParticle("+" + currentComboNumber, p.x, p.y));
-			}
+		createComboTextParticles(matcher.findMatches());
+	}
+
+	private void createComboTextParticles(Vector<Match> matches) {
+		for (Match m : matches) {
+			currentComboNumber++;
+			comboParticles.add(new TextParticle("x" + currentComboNumber, m.topX()
+						* Piece.TILE_SIZE + X_OFFSET, m.topY() * Piece.TILE_SIZE + Y_OFFSET
+						- getPartialRow()));
 		}
 	}
 
@@ -287,8 +290,11 @@ public class Board {
 			}
 		}
 
-		if (pieceStablized)
-			foundMatch = matcher.findMatches().size() > 0;
+		if (pieceStablized) {
+			Vector<Match> matches = matcher.findMatches();
+			foundMatch = matches.size() > 0;
+			createComboTextParticles(matches);
+		}
 
 		if (pieceDisappeared || foundMatch)
 			doGravity();

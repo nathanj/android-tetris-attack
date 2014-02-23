@@ -25,7 +25,7 @@ public class Timer {
 		return 1.0 * (length - time_remaining) / length;
 	}
 
-	public double percentLeft() {
+	public double percentRemaining() {
 		return 1.0 - percentFinished();
 	}
 
