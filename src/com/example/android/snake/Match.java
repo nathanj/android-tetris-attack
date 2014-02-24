@@ -1,10 +1,11 @@
 package com.example.android.snake;
 
 import java.util.Collection;
-import java.util.Vector;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class Match {
-	Vector<Piece> pieces = new Vector<Piece>();
+	Set<Piece> pieces = new TreeSet<Piece>();
 
 	public void addPiece(Piece p) {
 		pieces.add(p);
@@ -34,5 +35,24 @@ public class Match {
 				y = p.y;
 		}
 		return y;
+	}
+
+	public boolean sharesPieceWith(Match o) {
+		for (Piece p : o.pieces) {
+			if (pieces.contains(p))
+				return true;
+		}
+		return false;
+	}
+
+	public void mergeMatch(Match o) {
+		pieces.addAll(o.pieces);
+	}
+
+	public int chain() {
+		int chain = 0;
+		for (Piece p : pieces)
+			chain = Math.max(chain, p.chain);
+		return chain;
 	}
 }

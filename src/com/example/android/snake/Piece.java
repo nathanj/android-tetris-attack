@@ -1,6 +1,6 @@
 package com.example.android.snake;
 
-public class Piece {
+public class Piece implements Comparable<Piece> {
 	public final static int TILE_SIZE = 64;
 
 	public enum PieceType {
@@ -12,19 +12,25 @@ public class Piece {
 	boolean selected = false;
 	boolean falling = false;
 	float speed = 0f;
-	float x, y;
+	int x, y;
 	float extra_y = 0f;
 	float dying_time = 0f;
+	int chain = 1;
 
-	Piece() {
+	public Piece() {
 		type = PieceType.NONE;
 	}
 
-	Piece(PieceType type) {
+	public Piece(PieceType type) {
 		this.type = type;
 	}
 
-	Piece(float x, float y) {
+	public Piece(int x, int y) {
+		this.x = x;
+		this.y = y;
+	}
+
+	public void setPos(int x, int y) {
 		this.x = x;
 		this.y = y;
 	}
@@ -50,5 +56,26 @@ public class Piece {
 
 		dying = true;
 		dying_time = 0f;
+	}
+
+	@Override
+	public String toString() {
+		return "Piece(" + x + "," + y + ")";
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (o instanceof Piece) {
+			return compareTo((Piece) o) == 0;
+		}
+		return false;
+	}
+
+	@Override
+	public int compareTo(Piece o) {
+		if (x == o.x) {
+			return (int) Math.signum(y - o.y);
+		}
+		return (int) Math.signum(x - o.x);
 	}
 }

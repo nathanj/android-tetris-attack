@@ -14,7 +14,7 @@ public class Board {
 	private final static int ROWS = 11, COLUMNS = 6;
 	private final static int X_OFFSET = 20, Y_OFFSET = 20;
 	private final static float ACCELERATION = 25f; // pixels / sec / sec
-	private final static float DYING_TIME = 500f; // ms
+	private final static float DYING_TIME = 1500f; // ms
 	private final static long NEXT_ROW_TIME = 7500;
 	private final static int SELECTED_PIECE_OFFSET_X = 17;
 	private final static int SELECTED_PIECE_OFFSET_Y = 17;
@@ -28,8 +28,8 @@ public class Board {
 	private Random rng = new Random();
 	private long timeTillNextRow = NEXT_ROW_TIME;
 	private BoardMatcher matcher;
-	private int currentComboNumber = 0;
 	private Vector<TextParticle> comboParticles = new Vector<TextParticle>();
+	private boolean playerMovedNextRow = false;
 
 	public Board() {
 		board = new Piece[ROWS][COLUMNS];
@@ -156,7 +156,8 @@ public class Board {
 			selectedPiece.x = -1;
 		}
 
-		System.out.printf("selected x=%d y=%d\n", selectedPiece.x, selectedPiece.y);
+		// System.out.printf("selected x=%d y=%d\n", selectedPiece.x,
+		// selectedPiece.y);
 	}
 
 	public void movePiece(float x, float y) {
@@ -208,7 +209,8 @@ public class Board {
 	}
 
 	public void deselectPiece() {
-		System.out.printf("deselect x=%d y=%d\n", selectedPiece.x, selectedPiece.y);
+		// System.out.printf("deselect x=%d y=%d\n", selectedPiece.x,
+		// selectedPiece.y);
 
 		if (selectedPiece.x != -1)
 			board[selectedPiece.y][selectedPiece.x].selected = false;
@@ -216,15 +218,21 @@ public class Board {
 		selectedPiece.y = -1;
 
 		doGravity();
-		createComboTextParticles(matcher.findMatches());
+		createComboTextParticles(matcher.findMatches(), false);
 	}
 
-	private void createComboTextParticles(Vector<Match> matches) {
+	private void createComboTextParticles(Vector<Match> matches, boolean increaseCombo) {
 		for (Match m : matches) {
-			currentComboNumber++;
-			comboParticles.add(new TextParticle("x" + currentComboNumber, m.topX()
-						* Piece.TILE_SIZE + X_OFFSET, m.topY() * Piece.TILE_SIZE + Y_OFFSET
-						- getPartialRow()));
+			// System.out.printf("NJ: chain=%d\n", m.chain());
+			if (m.chain() > 1)
+				comboParticles.add(new TextParticle("x" + m.chain(), Math.max(20, m.topX()
+						* Piece.TILE_SIZE + X_OFFSET), Math.max(20, m.topY() * Piece.TILE_SIZE
+						+ Y_OFFSET - getPartialRow())));
+			if (m.size() > 3)
+				comboParticles.add(new TextParticle("+" + m.size(), Math.max(20, m.topX()
+						* Piece.TILE_SIZE + X_OFFSET), Math.max(20, m.topY() * Piece.TILE_SIZE
+						+ Y_OFFSET - getPartialRow() - 150)));
+
 		}
 	}
 
@@ -274,6 +282,7 @@ public class Board {
 						pieceDisappeared = true;
 						board[i][j].type = Piece.PieceType.NONE;
 						p.dying = false;
+						setAllAboveToChain(i, j, board[i][j].chain + 1);
 					}
 				}
 			}
@@ -283,23 +292,53 @@ public class Board {
 			timeTillNextRow -= millis;
 
 			if (timeTillNextRow <= 0) {
-				makeNextRowReal();
-				generateNextRow();
+				moveNextRow();
 				pieceStablized = true;
-				timeTillNextRow = NEXT_ROW_TIME;
+			}
+
+			if (playerMovedNextRow) {
+				playerMovedNextRow = false;
+				pieceStablized = true;
 			}
 		}
 
 		if (pieceStablized) {
 			Vector<Match> matches = matcher.findMatches();
 			foundMatch = matches.size() > 0;
-			createComboTextParticles(matches);
+			createComboTextParticles(matches, true);
+			resetChainOnStablePieces();
 		}
 
 		if (pieceDisappeared || foundMatch)
 			doGravity();
 
 		updateParticles(millis);
+	}
+
+	public void moveNextRow() {
+		makeNextRowReal();
+		generateNextRow();
+		timeTillNextRow = NEXT_ROW_TIME;
+		playerMovedNextRow = true;
+	}
+
+	private void setAllAboveToChain(int row, int col, int chain) {
+		for (int i = row - 1; i >= 0; i--)
+			if (board[i][col].type != Piece.PieceType.NONE && !board[i][col].dying)
+				board[i][col].chain = Math.max(board[i][col].chain, chain);
+	}
+
+	private void resetChainOnStablePieces() {
+		for (int i = ROWS - 1; i >= 0; i--) {
+			for (int j = 0; j < COLUMNS; j++) {
+				Piece p = board[i][j];
+				if (p.type != Piece.PieceType.NONE && !p.falling && !p.dying && p.chain > 1) {
+					// System.out.printf("NJ: reseting chain on %d,%d   orig=%d\n",
+					// i, j, p.chain);
+					p.chain = 1;
+				}
+			}
+		}
 	}
 
 	private void updateParticles(long millis) {

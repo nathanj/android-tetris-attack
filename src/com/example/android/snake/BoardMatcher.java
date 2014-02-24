@@ -13,8 +13,6 @@ public class BoardMatcher {
 	}
 
 	public Vector<Match> findMatches() {
-		boolean match = false;
-
 		Vector<Match> matches = new Vector<Match>();
 
 		for (int i = 0; i < rows; i++)
@@ -22,7 +20,9 @@ public class BoardMatcher {
 		for (int i = 0; i < cols; i++)
 			matches.addAll(findColMatches(i));
 
-		if (match) {
+		combineMatches(matches);
+
+		if (matches.size() > 0) {
 			for (int i = 0; i < rows; i++)
 				for (int j = 0; j < cols; j++)
 					if (board[i][j].dying)
@@ -47,11 +47,13 @@ public class BoardMatcher {
 						currentMatch = new Match();
 						matches.add(currentMatch);
 						for (int k = 1; k < num; k++) {
-							currentMatch.addPiece(new Piece(y, j - k));
+							board[y][j - k].setPos(y, j - k);
+							currentMatch.addPiece(board[y][j - k]);
 							board[y][j - k].dying = true;
 						}
 					}
-					currentMatch.addPiece(new Piece(y, j));
+					board[y][j].setPos(y, j);
+					currentMatch.addPiece(board[y][j]);
 					board[y][j].dying = true;
 				}
 			} else {
@@ -79,11 +81,13 @@ public class BoardMatcher {
 						currentMatch = new Match();
 						matches.add(currentMatch);
 						for (int k = 1; k < num; k++) {
-							currentMatch.addPiece(new Piece(i - k, x));
+							board[i - k][x].setPos(i - k, x);
+							currentMatch.addPiece(board[i - k][x]);
 							board[i - k][x].dying = true;
 						}
 					}
-					currentMatch.addPiece(new Piece(i, x));
+					board[i][x].setPos(i, x);
+					currentMatch.addPiece(board[i][x]);
 					board[i][x].dying = true;
 				}
 			} else {
@@ -94,5 +98,19 @@ public class BoardMatcher {
 		}
 
 		return matches;
+	}
+
+	private void combineMatches(Vector<Match> matches) {
+		for (int i = 0; i < matches.size(); i++) {
+			for (int j = 0; j < matches.size() && j > i; j++) {
+				Match a = matches.get(i);
+				Match b = matches.get(j);
+				if (a.sharesPieceWith(b)) {
+					a.mergeMatch(b);
+					matches.remove(j);
+					j--;
+				}
+			}
+		}
 	}
 }

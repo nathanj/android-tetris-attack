@@ -49,7 +49,11 @@ public class BoardView extends View {
 	public void handleTouchEvent(int action, float x, float y) {
 		switch (action) {
 		case MotionEvent.ACTION_DOWN:
-			board.selectPiece(x, y);
+			System.out.printf("NJJJ y = %f\n", y);
+			if (y > 750)
+				board.moveNextRow();
+			else
+				board.selectPiece(x, y);
 			break;
 		case MotionEvent.ACTION_MOVE:
 			board.movePiece(x, y);
